@@ -83,3 +83,21 @@ export async function getSavedRate(): Promise<{ data: RateData | null; error: st
     return { data: null, error: `Could not fetch saved rate. ${errorMessage}` };
   }
 }
+
+export async function getBackendIp(): Promise<{ ip: string | null; error: string | null }> {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch IP: ${response.statusText}`);
+    }
+    const data = await response.json();
+    if (typeof data.ip !== 'string') {
+        return { ip: null, error: "Invalid response from IP service." };
+    }
+    return { ip: data.ip, error: null };
+  } catch (e: unknown) {
+    console.error("Failed to fetch backend IP:", e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    return { ip: null, error: `Could not fetch IP address. ${errorMessage}` };
+  }
+}

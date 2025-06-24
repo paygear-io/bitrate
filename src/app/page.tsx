@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ArrowDown, ArrowUp, RefreshCw, Save, TrendingUp } from "lucide-react";
-import { getBtcRate, getSavedRate, saveRate } from "./actions";
+import { ArrowDown, ArrowUp, RefreshCw, Save, Server, TrendingUp } from "lucide-react";
+import { getBtcRate, getSavedRate, saveRate, getBackendIp } from "./actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 
 interface RateData {
   rate: number;
@@ -29,6 +30,8 @@ export default function Home() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isAnimating, setIsAnimating] = React.useState(false);
   const [hasAttemptedFetch, setHasAttemptedFetch] = React.useState(false);
+  const [backendIp, setBackendIp] = React.useState<string | null>(null);
+  const [isFetchingIp, setIsFetchingIp] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -93,6 +96,22 @@ export default function Home() {
       }
       setIsSaving(false);
     }
+  };
+
+  const handleFetchIp = async () => {
+    setIsFetchingIp(true);
+    const result = await getBackendIp();
+    if (result.error) {
+      toast({
+        variant: "destructive",
+        title: "Error fetching IP",
+        description: result.error,
+      });
+      setBackendIp(null);
+    } else {
+      setBackendIp(result.ip);
+    }
+    setIsFetchingIp(false);
   };
 
   const changeInfo = React.useMemo(() => {
@@ -183,32 +202,56 @@ export default function Home() {
             </div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-between items-center text-sm text-muted-foreground px-6 pb-6">
-          <span>
-            {data ? `Last updated: ${new Date(data.timestamp).toLocaleTimeString()}` : "Not updated yet"}
-          </span>
-          <div className="flex items-center gap-2">
+        <CardFooter className="flex-col items-stretch gap-4 px-6 pb-6">
+          <div className="flex justify-between items-center text-sm text-muted-foreground">
+            <span>
+              {data ? `Last updated: ${new Date(data.timestamp).toLocaleTimeString()}` : "Not updated yet"}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveRate}
+                disabled={!data || isLoading || isSaving}
+                aria-label="Save current rate"
+              >
+                <Save className={cn("h-4 w-4", isSaving && "animate-spin")} />
+                <span className="ml-2 hidden sm:inline">Save</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchRate}
+                disabled={isLoading}
+                aria-label="Refresh exchange rate"
+              >
+                <RefreshCw
+                  className={cn("h-4 w-4", isLoading && "animate-spin")}
+                />
+                <span className="ml-2 hidden sm:inline">Refresh</span>
+              </Button>
+            </div>
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div>
+              {isFetchingIp ? (
+                <Skeleton className="h-5 w-48" />
+              ) : backendIp ? (
+                <span>Backend IP: <code className="font-mono bg-muted px-1 py-0.5 rounded">{backendIp}</code></span>
+              ) : (
+                <span>Click to see the backend IP.</span>
+              )}
+            </div>
             <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveRate}
-              disabled={!data || isLoading || isSaving}
-              aria-label="Save current rate"
-            >
-              <Save className={cn("h-4 w-4", isSaving && "animate-spin")} />
-              <span className="ml-2 hidden sm:inline">Save</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchRate}
-              disabled={isLoading}
-              aria-label="Refresh exchange rate"
-            >
-              <RefreshCw
-                className={cn("h-4 w-4", isLoading && "animate-spin")}
-              />
-              <span className="ml-2 hidden sm:inline">Refresh</span>
+                variant="outline"
+                size="sm"
+                onClick={handleFetchIp}
+                disabled={isFetchingIp}
+                aria-label="Show backend IP address"
+              >
+                <Server className="h-4 w-4" />
+                <span className="ml-2 hidden sm:inline">Show IP</span>
             </Button>
           </div>
         </CardFooter>
