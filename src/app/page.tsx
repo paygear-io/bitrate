@@ -32,6 +32,7 @@ export default function Home() {
     setIsLoading(true);
     setHasAttemptedFetch(true);
     const result = await getBtcRate();
+    setIsLoading(false);
 
     if (result.error || !result.data) {
       toast({
@@ -39,18 +40,14 @@ export default function Home() {
         title: "Error fetching rate",
         description: result.error || "An unknown error occurred.",
       });
-      // Keep stale data visible if a refresh fails
-      if (!data) {
-        setData(null);
-      }
     } else {
       setData(result.data);
       setIsAnimating(true);
       const timer = setTimeout(() => setIsAnimating(false), 700);
-      return () => clearTimeout(timer);
+      // NOTE: In a complex app, we'd want to clean up this timer on unmount.
+      // For this page, it's safe to assume it won't unmount unexpectedly.
     }
-    setIsLoading(false);
-  }, [toast, data]);
+  }, [toast]);
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-background p-4">
