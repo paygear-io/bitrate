@@ -23,12 +23,14 @@ interface RateData {
 
 export default function Home() {
   const [data, setData] = React.useState<RateData | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(false);
   const [isAnimating, setIsAnimating] = React.useState(false);
+  const [hasAttemptedFetch, setHasAttemptedFetch] = React.useState(false);
   const { toast } = useToast();
 
   const fetchRate = React.useCallback(async () => {
     setIsLoading(true);
+    setHasAttemptedFetch(true);
     const result = await getBtcRate();
 
     if (result.error || !result.data) {
@@ -50,10 +52,6 @@ export default function Home() {
     setIsLoading(false);
   }, [toast, data]);
 
-  React.useEffect(() => {
-    fetchRate();
-  }, [fetchRate]);
-
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-lg">
@@ -69,11 +67,11 @@ export default function Home() {
         <CardContent>
           <div
             className={cn(
-              "rounded-lg p-6 text-center transition-colors",
+              "rounded-lg p-6 text-center transition-colors flex items-center justify-center min-h-[124px]",
               isAnimating && "animate-highlight"
             )}
           >
-            {isLoading && !data ? (
+            {isLoading ? (
               <Skeleton className="h-[76px] w-full" />
             ) : data ? (
               <div>
@@ -88,16 +86,21 @@ export default function Home() {
                   </span>
                 </p>
               </div>
-            ) : (
-               <div className="text-destructive text-center py-8">
+            ) : hasAttemptedFetch ? (
+               <div className="text-destructive text-center">
                 <p>Could not fetch exchange rate.</p>
               </div>
-            )}
+            ) : (
+              <div className="text-muted-foreground text-center">
+                <p>Click Refresh to get the latest rate.</p>
+              </div>
+            )
+            }
           </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center text-sm text-muted-foreground px-6 pb-6">
           <span>
-            {data ? `Last updated: ${new Date(data.timestamp).toLocaleTimeString()}` : "Updating..."}
+            {data ? `Last updated: ${new Date(data.timestamp).toLocaleTimeString()}` : "Not updated yet"}
           </span>
           <Button
             variant="outline"
