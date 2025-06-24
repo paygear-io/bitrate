@@ -1,6 +1,8 @@
 "use server";
 
 import ccxt from "ccxt";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 
 interface RateData {
   rate: number;
@@ -33,5 +35,43 @@ export async function getBtcRate(): Promise<ActionResult> {
       data: null, 
       error: `Could not connect to the API. ${errorMessage}` 
     };
+  }
+}
+
+export async function saveRate(rateData: RateData): Promise<{ error: string | null }> {
+  try {
+    const rateRef = doc(db, "rates", "latest_btc_usdt");
+    const dataToSave = {
+      rate: rateData.rate,
+      timestamp: Timestamp.fromMillis(rateData.timestamp),
+    };
+    await setDoc(rateRef, dataToSave);
+    return { error: null };
+  } catch (e: unknown) {
+    console.error("Failed to save rate to Firestore:", e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    return { error: `Could not save rate. ${errorMessage}` };
+  }
+}
+
+export async function getSavedRate(): Promise<{ data: RateData | null; error: string | null; }> {
+  try {
+    const rateRef = doc(db, "rates", "latest_btc_usdt");
+    const docSnap = await getDoc(rateRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const rateData: RateData = {
+        rate: data.rate,
+        timestamp: data.timestamp.toMillis(),
+      };
+      return { data: rateData, error: null };
+    } else {
+      return { data: null, error: null };
+    }
+  } catch (e: unknown) {
+    console.error("Failed to get saved rate from Firestore:", e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    return { data: null, error: `Could not fetch saved rate. ${errorMessage}` };
   }
 }

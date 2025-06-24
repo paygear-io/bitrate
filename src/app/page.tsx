@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ArrowDown, ArrowUp, RefreshCw, Save, TrendingUp } from "lucide-react";
-import { getBtcRate } from "./actions";
+import { getBtcRate, getSavedRate, saveRate } from "./actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,9 +26,26 @@ export default function Home() {
   const [data, setData] = React.useState<RateData | null>(null);
   const [savedRate, setSavedRate] = React.useState<RateData | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
   const [isAnimating, setIsAnimating] = React.useState(false);
   const [hasAttemptedFetch, setHasAttemptedFetch] = React.useState(false);
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    const fetchSavedRate = async () => {
+      const { data, error } = await getSavedRate();
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error loading saved rate",
+          description: error,
+        });
+      } else if (data) {
+        setSavedRate(data);
+      }
+    };
+    fetchSavedRate();
+  }, [toast]);
 
   const fetchRate = React.useCallback(async () => {
     setIsLoading(true);
@@ -36,37 +53,45 @@ export default function Home() {
       setHasAttemptedFetch(true);
     }
     
-    try {
-      const result = await getBtcRate();
-      if (result.error || !result.data) {
-        toast({
-          variant: "destructive",
-          title: "Error fetching rate",
-          description: result.error || "An unknown error occurred.",
-        });
-      } else {
-        setData(result.data);
-        setIsAnimating(true);
-        setTimeout(() => setIsAnimating(false), 700);
-      }
-    } catch (e) {
-       toast({
+    const result = await getBtcRate();
+    if (result.error || !result.data) {
+      toast({
         variant: "destructive",
         title: "Error fetching rate",
-        description: "An unexpected error occurred.",
+        description: result.error || "An unknown error occurred.",
       });
-    } finally {
-      setIsLoading(false);
+      // Clear previous rate on error to avoid confusion
+      setData(null);
+    } else {
+      setData(result.data);
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 700);
     }
+    setIsLoading(false);
   }, [toast, hasAttemptedFetch]);
 
-  const handleSaveRate = () => {
+  const handleSaveRate = async () => {
     if (data) {
-      setSavedRate(data);
-      toast({
-        title: "Rate Saved",
-        description: `BTC/USDT rate of ${data.rate.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2})} saved.`,
-      });
+      setIsSaving(true);
+      const result = await saveRate(data);
+
+      if (result.error) {
+        toast({
+          variant: "destructive",
+          title: "Error Saving Rate",
+          description: result.error,
+        });
+      } else {
+        setSavedRate(data);
+        toast({
+          title: "Rate Saved",
+          description: `BTC/USDT rate of ${data.rate.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })} saved to the database.`,
+        });
+      }
+      setIsSaving(false);
     }
   };
 
@@ -167,10 +192,10 @@ export default function Home() {
               variant="outline"
               size="sm"
               onClick={handleSaveRate}
-              disabled={!data || isLoading}
+              disabled={!data || isLoading || isSaving}
               aria-label="Save current rate"
             >
-              <Save className="h-4 w-4" />
+              <Save className={cn("h-4 w-4", isSaving && "animate-spin")} />
               <span className="ml-2 hidden sm:inline">Save</span>
             </Button>
             <Button
