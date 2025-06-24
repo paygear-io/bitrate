@@ -15,6 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 interface RateData {
   rate: number;
@@ -151,8 +152,8 @@ export default function Home() {
                     ({changeInfo.isPositive ? '+' : ''}{changeInfo.percentageChange.toFixed(2)}%)
                 </span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                    Saved at {new Date(savedRate.timestamp).toLocaleTimeString()}
+                <p className="text-xs text-muted-foreground mt-2">
+                    Saved: {savedRate.rate.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({formatDistanceToNow(new Date(savedRate.timestamp), { addSuffix: true })})
                 </p>
             </div>
           )}
