@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { RefreshCw, TrendingUp } from "lucide-react";
+import { ArrowDown, ArrowUp, RefreshCw, Save, TrendingUp } from "lucide-react";
 import { getBtcRate } from "./actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,7 @@ interface RateData {
 
 export default function Home() {
   const [data, setData] = React.useState<RateData | null>(null);
+  const [savedRate, setSavedRate] = React.useState<RateData | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isAnimating, setIsAnimating] = React.useState(false);
   const [hasAttemptedFetch, setHasAttemptedFetch] = React.useState(false);
@@ -30,24 +31,57 @@ export default function Home() {
 
   const fetchRate = React.useCallback(async () => {
     setIsLoading(true);
-    setHasAttemptedFetch(true);
-    const result = await getBtcRate();
-    setIsLoading(false);
-
-    if (result.error || !result.data) {
-      toast({
+    if (!hasAttemptedFetch) {
+      setHasAttemptedFetch(true);
+    }
+    
+    try {
+      const result = await getBtcRate();
+      if (result.error || !result.data) {
+        toast({
+          variant: "destructive",
+          title: "Error fetching rate",
+          description: result.error || "An unknown error occurred.",
+        });
+      } else {
+        setData(result.data);
+        setIsAnimating(true);
+        setTimeout(() => setIsAnimating(false), 700);
+      }
+    } catch (e) {
+       toast({
         variant: "destructive",
         title: "Error fetching rate",
-        description: result.error || "An unknown error occurred.",
+        description: "An unexpected error occurred.",
       });
-    } else {
-      setData(result.data);
-      setIsAnimating(true);
-      const timer = setTimeout(() => setIsAnimating(false), 700);
-      // NOTE: In a complex app, we'd want to clean up this timer on unmount.
-      // For this page, it's safe to assume it won't unmount unexpectedly.
+    } finally {
+      setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, hasAttemptedFetch]);
+
+  const handleSaveRate = () => {
+    if (data) {
+      setSavedRate(data);
+      toast({
+        title: "Rate Saved",
+        description: `BTC/USDT rate of ${data.rate.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2})} saved.`,
+      });
+    }
+  };
+
+  const changeInfo = React.useMemo(() => {
+    if (!data || !savedRate) return null;
+    
+    const change = data.rate - savedRate.rate;
+    const percentageChange = (change / savedRate.rate) * 100;
+    const isPositive = change >= 0;
+
+    return {
+      change,
+      percentageChange,
+      isPositive,
+    };
+  }, [data, savedRate]);
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-background p-4">
@@ -68,8 +102,8 @@ export default function Home() {
               isAnimating && "animate-highlight"
             )}
           >
-            {isLoading ? (
-              <Skeleton className="h-[76px] w-full" />
+            {isLoading && !data ? (
+              <Skeleton className="h-[76px] w-[280px]" />
             ) : data ? (
               <div>
                 <p className="text-sm text-muted-foreground">1 BTC equals</p>
@@ -94,23 +128,63 @@ export default function Home() {
             )
             }
           </div>
+
+          {changeInfo && savedRate && (
+            <div className="text-center text-sm -mt-4 mb-6 px-6">
+                <p className="text-muted-foreground">
+                    Change since saved rate
+                </p>
+                <div
+                className={cn(
+                    "mt-1 flex items-center justify-center gap-1 text-lg font-bold",
+                    changeInfo.isPositive ? "text-chart-2" : "text-destructive"
+                )}
+                >
+                {changeInfo.isPositive ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
+                <span>
+                    {Math.abs(changeInfo.change).toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    })}
+                </span>
+                <span className="text-base font-medium">
+                    ({changeInfo.isPositive ? '+' : ''}{changeInfo.percentageChange.toFixed(2)}%)
+                </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                    Saved at {new Date(savedRate.timestamp).toLocaleTimeString()}
+                </p>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-between items-center text-sm text-muted-foreground px-6 pb-6">
           <span>
             {data ? `Last updated: ${new Date(data.timestamp).toLocaleTimeString()}` : "Not updated yet"}
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchRate}
-            disabled={isLoading}
-            aria-label="Refresh exchange rate"
-          >
-            <RefreshCw
-              className={cn("h-4 w-4", isLoading && "animate-spin")}
-            />
-            <span className="ml-2 hidden sm:inline">Refresh</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveRate}
+              disabled={!data || isLoading}
+              aria-label="Save current rate"
+            >
+              <Save className="h-4 w-4" />
+              <span className="ml-2 hidden sm:inline">Save</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchRate}
+              disabled={isLoading}
+              aria-label="Refresh exchange rate"
+            >
+              <RefreshCw
+                className={cn("h-4 w-4", isLoading && "animate-spin")}
+              />
+              <span className="ml-2 hidden sm:inline">Refresh</span>
+            </Button>
+          </div>
         </CardFooter>
       </Card>
     </main>
