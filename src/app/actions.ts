@@ -19,8 +19,8 @@ export async function getBtcRate(): Promise<ActionResult> {
     const exchange = new ccxt.binance();
     const ticker = await exchange.fetchTicker("BTC/USDT");
     
-    if (!ticker || typeof ticker.last !== 'number') {
-      return { data: null, error: "Invalid response from Binance API." };
+    if (!ticker || typeof ticker.last !== 'number' || !isFinite(ticker.last)) {
+      return { data: null, error: "Invalid or non-finite rate from Binance API." };
     }
     
     return { 
@@ -40,12 +40,17 @@ export async function getBtcRate(): Promise<ActionResult> {
 
 export async function saveRate(rateData: RateData): Promise<{ error: string | null }> {
   try {
+    if (!rateData || typeof rateData.rate !== 'number' || !isFinite(rateData.rate)) {
+      return { error: "Attempted to save an invalid rate value." };
+    }
+    
     const rateRef = doc(db, "rates", "latest_btc_usdt");
     const dataToSave = {
       rate: rateData.rate,
       timestamp: Timestamp.fromMillis(rateData.timestamp),
     };
     await setDoc(rateRef, dataToSave);
+
     return { error: null };
   } catch (e: unknown) {
     console.error("Failed to save rate to Firestore:", e);
@@ -61,6 +66,9 @@ export async function getSavedRate(): Promise<{ data: RateData | null; error: st
 
     if (docSnap.exists()) {
       const data = docSnap.data();
+      if (typeof data.rate !== 'number' || !data.timestamp?.toMillis) {
+        return { data: null, error: "Invalid data format in database." };
+      }
       const rateData: RateData = {
         rate: data.rate,
         timestamp: data.timestamp.toMillis(),
