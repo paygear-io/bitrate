@@ -1,0 +1,26 @@
+{
+  "HomePage": {
+    "title": "BitRate",
+    "description": "Live BTC/USDT Exchange Rate from Binance",
+    "btcEquals": "1 BTC equals",
+    "usdt": "USDT",
+    "fetchError": "Could not fetch exchange rate.",
+    "clickToRefresh": "Click Refresh to get the latest rate.",
+    "changeSinceSaved": "Change since saved rate",
+    "savedRate": "Saved: {rate} ({timeAgo})",
+    "lastUpdated": "Last updated: {time}",
+    "notUpdated": "Not updated yet",
+    "saveButton": "Save",
+    "refreshButton": "Refresh",
+    "backendIp": "Backend IP:",
+    "showIpPrompt": "Click to see the backend IP.",
+    "showIpButton": "Show IP",
+    "loadingSavedRateError": "Error loading saved rate",
+    "fetchingRateError": "Error fetching rate",
+    "unknownError": "An unknown error occurred.",
+    "savingRateError": "Error Saving Rate",
+    "rateSavedSuccess": "Rate Saved",
+    "rateSavedDescription": "BTC/USDT rate of {rate} saved to the database.",
+    "fetchingIpError": "Error fetching IP"
+  }
+}

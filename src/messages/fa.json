@@ -1,0 +1,26 @@
+{
+  "HomePage": {
+    "title": "بیت‌ریت",
+    "description": "نرخ لحظه‌ای تبادل بیت‌کوین به تتر از بایننس",
+    "btcEquals": "۱ بیت‌کوین برابر است با",
+    "usdt": "تتر",
+    "fetchError": "دریافت نرخ ارز با مشکل مواجه شد.",
+    "clickToRefresh": "برای دریافت آخرین نرخ، روی «تازه‌سازی» کلیک کنید.",
+    "changeSinceSaved": "تغییر نسبت به نرخ ذخیره شده",
+    "savedRate": "ذخیره شده: {rate} ({timeAgo})",
+    "lastUpdated": "آخرین بروزرسانی: {time}",
+    "notUpdated": "هنوز بروزرسانی نشده",
+    "saveButton": "ذخیره",
+    "refreshButton": "تازه‌سازی",
+    "backendIp": "آی‌پی بک‌اند:",
+    "showIpPrompt": "برای مشاهده آی‌پی بک‌اند کلیک کنید.",
+    "showIpButton": "نمایش آی‌پی",
+    "loadingSavedRateError": "خطا در بارگذاری نرخ ذخیره شده",
+    "fetchingRateError": "خطا در دریافت نرخ",
+    "unknownError": "یک خطای ناشناخته رخ داد.",
+    "savingRateError": "خطا در ذخیره نرخ",
+    "rateSavedSuccess": "نرخ ذخیره شد",
+    "rateSavedDescription": "نرخ {rate} برای بیت‌کوین/تتر در پایگاه داده ذخیره شد.",
+    "fetchingIpError": "خطا در دریافت آی‌پی"
+  }
+}
